@@ -1,9 +1,28 @@
+global <<< require 'prelude-ls'
 
-require! 'express'
+web = require './server/web'
+fetcher = require './server/fetcher'
+db = require './server/db'
 
-app = express!
+require! cluster
+require! os
 
-app.listen 3000
+nCpus = os.cpus!length
 
-app.use (req, res, next) ->
-	res.send 404
+db = (require './server/db') {
+	host: 'localhost'
+	user: 'recess'
+	password: 'horse'
+	database: 'recess'
+}
+
+if cluster.isMaster
+	fetcher.start db
+
+	for i from 1 to nCpus
+		worker = cluster.fork!
+
+		worker.on 'error', (err) ->
+			console.log err
+else
+	web.server db
