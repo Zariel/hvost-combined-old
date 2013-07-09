@@ -142,6 +142,7 @@ var insertFeed = function(channel) {
 					published: parseRssDate(item.pubDate[0])
 				}
 
+				sadd("fetched.items." + channel_id, o.hash)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
 					console.log("Succfully inserted " + o.title)
 				}, function(err) {
