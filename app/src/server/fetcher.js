@@ -119,7 +119,7 @@ var getCachedItems = function(channel) {
 
 var contains = function(list, x) {
 	for(var i in list) {
-		if(i === x) {
+		if(list[i] === x) {
 			return true
 		}
 	}
