@@ -142,12 +142,10 @@ var insertFeed = function(channel) {
 					published: parseRssDate(item.pubDate[0])
 				}
 
-				sadd("fetched.items." + channel_id, o.hash)
+				sadd("fetched.items." + channel.channel_id, o.hash).catch(console.log)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
 					console.log("Succfully inserted " + o.title)
-				}, function(err) {
-					console.log(err)
-				})
+				}).catch(console.log)
 			})
 		})
 
