@@ -4,6 +4,8 @@ var xml2js = require('xml2js')
 var parseRSS = require('./feeds').parseRSS
 var crypto = require("crypto")
 
+var redis = require("redis").createClient()
+
 var config = {
 	host: 'localhost',
 	user: 'recess',
@@ -54,26 +56,97 @@ var hash = function(s) {
 	return hash.digest("hex")
 }
 
+var setCachedItems = function(channel, items) {
+	var defer = Q.defer()
+
+	var feed = items.map(hashItems)
+
+	redis.sadd()
+
+	return defer.promise
+}
+
+var hashItems = function(x) {
+	return hash(x.link[0])
+}
+
+var redisQ = function(defer) {
+	return function(err, res) {
+		if(err) {
+			return defer.reject(err)
+		}
+
+		return defer.resolve(res)
+	}
+}
+
+var sadd = function(key, items) {
+	var defer = Q.defer()
+
+	redis.sadd(key, items, redisQ(defer))
+
+	return defer.promise
+}
+
+var sdiff = function(a, b) {
+	var defer = Q.defer()
+
+	redis.sdiff(a, b, redisQ(defer))
+
+	return defer.promise
+}
+
+var getItemsToInsert = function(channel, items) {
+	var key = "tmp.itemstoinsert." + channel + "." + new Date().getTime()
+	return sadd(key, items.map(hashItems)).then(function(res) {
+		return sdiff(key, "fetched.items." + channel).then(function(res) {
+			redis.del(key)
+
+			return items.filter(function(x) {
+				return contains(res, x)
+			})
+		})
+	})
+}
+
+var getCachedItems = function(channel) {
+	var defer = Q.defer()
+
+	redis.sget("fetched.items." + channel, redisQ(defer))
+
+	return defer.promise
+}
+
+var contains = function(list, x) {
+	for(var i in list) {
+		if(i === x) {
+			return true
+		}
+	}
+
+	return false
+}
+
 var insertFeed = function(channel) {
 	return function(feed) {
 		var rss = feed.rss.channel[0]
-		var items = rss.item
+		getItemsToInsert(channel, rss.item).then(function(items) {
+			return items.map(function(item) {
+				var o = {
+					channel_id: channel.channel_id,
+					title: item.title[0],
+					link: item.link[0],
+					description: item.description[0],
+					guid: getGUID(item.guid[0]),
+					hash: hash(item.link[0]),
+					published: parseRssDate(item.pubDate[0])
+				}
 
-		var promises = items.map(function(item) {
-			var o = {
-				channel_id: channel.channel_id,
-				title: item.title[0],
-				link: item.link[0],
-				description: item.description[0],
-				guid: getGUID(item.guid[0]),
-				hash: hash(item.link[0]),
-				published: parseRssDate(item.pubDate[0])
-			}
-
-			return db.query("INSERT INTO items SET ?", o).then(function(res) {
-				console.log("Succfully inserted " + o.title)
-			}, function(err) {
-				console.log(err)
+				return db.query("INSERT INTO items SET ?", o).then(function(res) {
+					console.log("Succfully inserted " + o.title)
+				}, function(err) {
+					console.log(err)
+				})
 			})
 		})
 
@@ -93,8 +166,14 @@ var fetchFeeds = function(channels) {
 	})
 }
 
-run = function() {
+var run = function() {
 	db.getChannels().then(fetchFeeds).catch(console.log)
 }
+
+var id = setInterval(run, 5 * 60 * 1000)
+
+process.on("SIGINT", function() {
+	console.log("Got SIGINT")
+})
 
 run()
