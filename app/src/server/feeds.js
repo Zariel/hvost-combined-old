@@ -16,7 +16,7 @@ var requestQ = function(url) {
 	return defer.promise
 }
 
-var parseString = function(string) {
+var parseRSS = function(string) {
 	var defer = Q.defer()
 	xml2js.parseString(string, function(err, data) {
 		if (err) {
@@ -30,7 +30,7 @@ var parseString = function(string) {
 }
 
 var add = function(db, url) {
-	return requestQ(url).then(parseString).then(function(data) {
+	return requestQ(url).then(parseRSS).then(function(data) {
 		var rss = data.rss.channel[0]
 		var vals = [rss.title[0], rss.description[0], ((rss != null ? (ref$ = rss.ttl) != null ? ref$[0] : void 8 : void 8) || 30) * 60, url, rss.link[0]]
 		var query = 'INSERT INTO Channels(title, description, ttl, url, link, last_update) VALUES(?, ?, ?, ?, ?, NOW() - 1)'
@@ -39,11 +39,7 @@ var add = function(db, url) {
 	})
 }
 
-var getChannels = function(db) {
-	return db.query('SELECT * FROM Channels ORDER BY title')
-}
-
 module.exports = {
 	add: add,
-	getChannels: getChannels
+	parseRSS: parseRSS
 }

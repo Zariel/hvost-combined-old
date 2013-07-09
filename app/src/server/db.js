@@ -1,43 +1,70 @@
 var mysql = require('mysql')
 var Q = require('Q')
 
-var db = function(config) {
-  var pool = mysql.createPool(config)
+/*
+ * Todo:
+ * Add cache, I love redis
+ */
 
-  var getConnection = function() {}
-	var defer = Q.defer()
+var DB = (function() {
+	function DB(pool) {
+		this.pool = pool
 
-	pool.getConnection(function(err, con) {
-	  if (err) {
-		return defer.reject(err)
-	  }
+		return this
+	}
 
-	  return defer.resolve(con)
-	})
+	DB.prototype.getConnection = function() {
+		var defer = Q.defer()
 
-	return defer.promise;
-  }
+		this.pool.getConnection(function(err, con) {
+			if (err) {
+				console.log(err)
+				return defer.reject(err)
+			}
 
-  this.query = query = function() {
-	var defer = Q.defer()
-	var args = Array.prototype.slice.call(arguments)
-	args.push(function(err, rows) {
-	  if (err) {
-		return defer.reject(err)
-	  }
+			return defer.resolve(con)
+		})
 
-	  return defer.resolve(rows)
-	})
+		return defer.promise;
+	}
 
-	getConnection().then(function(con){
-	  con.query.apply(con, args);
-	  return con.close()
-	})
+	// This passes arguments directly to mysql.connection.query
+	DB.prototype.query = function() {
+		var defer = Q.defer()
 
-	return defer.promise
-  }
+		var args = Array.prototype.slice.call(arguments)
+		args.push(function(err, rows) {
+			if (err) {
+				console.log(err)
+				return defer.reject(err)
+			}
 
-  return this
+			return defer.resolve(rows)
+		})
+
+		this.getConnection().then(function(con){
+			con.query.apply(con, args);
+			return con.end()
+		})
+
+		return defer.promise
+	}
+
+	DB.prototype.getChannels = function() {
+		return this.query("SELECT * FROM Channels;")
+	}
+
+	DB.prototype.getFeed = function(id) {
+		return this.query("SELECT * FROM Items WHERE channel_id = ?", [id])
+	}
+
+	return DB
+})()
+
+module.exports = function(config) {
+	var pool = mysql.createPool(config)
+
+	var db = new DB(pool)
+
+	return db
 }
-
-module.exports = db
