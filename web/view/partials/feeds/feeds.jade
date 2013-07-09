@@ -1,0 +1,5 @@
+.fluid-container#feed-body
+	.row-fluid
+		section(ng-repeat = 'feed in feeds')
+			h2 {{ feed.title }}
+			p(ng-bind-html-unsafe = "feed.description")

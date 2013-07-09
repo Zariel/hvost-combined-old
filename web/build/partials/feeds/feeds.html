@@ -1,0 +1,9 @@
+
+<div id="feed-body" class="fluid-container">
+  <div class="row-fluid">
+    <section ng-repeat="feed in feeds">
+      <h2>{{ feed.title }}</h2>
+      <p ng-bind-html-unsafe="feed.description"></p>
+    </section>
+  </div>
+</div>

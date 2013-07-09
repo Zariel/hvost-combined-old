@@ -1,0 +1,19 @@
+
+<div id="channels" ng-controller="ControlsController">
+  <div style="padding: 8px 0" class="well">
+    <ul class="nav nav-list">
+      <li class="nav-header">Admin</li>
+      <li><a ng-href="#" data-toggle="modal" data-target="#addModal">Add</a></li>
+      <li class="nav-header">Feeds</li>
+      <li ng-repeat="chan in channels"><a ng-href="{{ '/feed/' + chan.id }}">{{ chan.title }}</a></li>
+    </ul>
+  </div>
+  <div id="addModal" class="modal hide fade">
+    <div class="modal-body">
+      <form ng-submit="addFeed(url)" class="form-inline">
+        <input type="url" placeholder="Url" ng-model="url">
+        <button type="submit" class="btn btn-primary">Add</button>
+      </form>
+    </div>
+  </div>
+</div>

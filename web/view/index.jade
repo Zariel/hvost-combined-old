@@ -1,0 +1,21 @@
+!!! 5
+
+html(lang = 'en', ng-app = 'recess')
+	head
+		meta(charset = 'utf-8')
+
+		script(src = "/js/vendor.js")
+		script(src = "/js/app.js")
+
+		link(rel = "stylesheet", href = "/css/app.css")
+
+		title("hej")
+
+	body
+		.fluid-container
+			.row-fluid
+				.span2
+					ng-include(src = "'/partials/controls.html'")
+				.span10
+					#main(ng-view)
+

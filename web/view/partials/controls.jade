@@ -1,0 +1,15 @@
+#channels(ng-controller = 'ControlsController')
+	.well(style = 'padding: 8px 0')
+		ul.nav.nav-list
+			li.nav-header Admin
+			li
+				a(ng-href = "#", data-toggle = "modal", data-target = "#addModal") Add
+
+			li.nav-header Feeds
+			li(ng-repeat = 'chan in channels')
+				a(ng-href = "{{ '/feed/' + chan.id }}") {{ chan.title }}
+	.modal.hide.fade#addModal
+		.modal-body
+			form.form-inline(ng-submit = "addFeed(url)")
+				input(type = "url", placeholder = "Url", ng-model = 'url')
+				button.btn.btn-primary(type = "submit") Add
