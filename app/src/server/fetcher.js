@@ -103,7 +103,7 @@ var getItemsToInsert = function(channel, items) {
 			redis.del(key)
 
 			return items.filter(function(x) {
-				return contains(res, x)
+				return contains(res, hashItems(x))
 			})
 		})
 	})
