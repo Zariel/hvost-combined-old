@@ -39,15 +39,16 @@ app.factory 'FeedResolver', [
 		defer.promise
 ]
 
-app.factory 'FeedList', [
-	"$location"
+app.directive 'feedlist', [
+	->
+		restrict: 'E'
+		controller: ["$scope", "$location", "$anchorScroll", ($scope, $location, $anchorScroll) ->
 
-	($location) ->
-		selected = undefined
-		currentIndex = -1
+			selected = void
+			currentIndex = -1
+			items = {}
 
-		{
-			click: (id, index, controller) ->
+			this.click = (id, index, controller) ->
 				var hash
 
 				if selected and selected is controller
@@ -62,22 +63,12 @@ app.factory 'FeedList', [
 
 				$location.hash hash .replace!
 
-			next: (a) ->
+			this.addItem = (id, scope) ->
+				items[id] = scope
 
-		}
-]
-
-app.directive 'feedlist', [
-	->
-		restrict: 'E'
-		controller: ["$scope", "$location", "$anchorScroll", ($scope, $location, $anchorScroll) ->
-
-			selected = undefined
-			currentIndex = -1
-
-			this.click = (id, index, controller) ->
+			this.next = ->
+				console.log items[currentIndex + 1]
 		]
-
 ]
 
 app.directive 'feeditem', [
@@ -88,22 +79,20 @@ app.directive 'feeditem', [
 			transclude: true
 			replace: true
 			template: """<section class="feed-item well" id = "f{{feed.id}}"><div ng-transclude></div></section>"""
-			controller: ["$scope", "Feed", "FeedList", ($scope, Feed, FeedList) ->
-				feedId = $scope.feed.id
-
-				$scope.click = ->
-					FeedList.click feedId, $scope.$index, $scope
-					$scope.markRead $scope.feed if not $scope.feed.read
-
+			controller: ["$scope", "Feed", ($scope, Feed) ->
 				$scope.markRead = (feed) ->
-					a = new Feed { id: feedId }
+					a = new Feed { id: feed.id }
 					a.$read!
 					feed.read = true
 			]
 
 			link: (scope, element, attrs, controller) ->
+				feed = scope.feed
+
 				element.bind 'click', ->
-					scope.$apply -> scope.click!
+					scope.$apply ->
+						controller.click feed.id, scope.$index, scope
+						scope.markRead feed if not feed.read
 
 				scope.select = ->
 					element.addClass 'feed-selected'
@@ -114,4 +103,10 @@ app.directive 'feeditem', [
 				#if "f#feedId" is scope.hash
 				#	click!
 		}
+]
+
+app.filter 'unread', [
+	->
+		(list) ->
+			list?filter -> !it.read
 ]
