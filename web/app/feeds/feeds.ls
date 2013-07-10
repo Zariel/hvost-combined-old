@@ -12,8 +12,13 @@ app.controller 'FeedController', [
 app.factory 'Feed', [
 	'$resource'
 	($resource) ->
-		$resource '/api/feed/:id', {
+		$resource '/api/feed/:id/:action', {
 			id: '@id'
+		}, {
+			read:
+				method: 'GET'
+				params:
+					action: 'read'
 		}
 ]
 
@@ -34,13 +39,15 @@ app.factory 'FeedResolver', [
 		defer.promise
 ]
 
-app.directive 'feedlist', [
-	->
-		restrict: 'E'
-		controller: ["$scope", "$location", ($scope, $location) ->
-			selected = undefined
+app.factory 'FeedList', [
+	"$location"
 
-			this.click = (id, controller) ->
+	($location) ->
+		selected = undefined
+		currentIndex = -1
+
+		{
+			click: (id, index, controller) ->
 				var hash
 
 				if selected and selected is controller
@@ -53,7 +60,22 @@ app.directive 'feedlist', [
 					selected := controller
 					hash = "f#id"
 
-				$scope.$apply -> $location.hash hash .replace!
+				$location.hash hash .replace!
+
+			next: (a) ->
+
+		}
+]
+
+app.directive 'feedlist', [
+	->
+		restrict: 'E'
+		controller: ["$scope", "$location", "$anchorScroll", ($scope, $location, $anchorScroll) ->
+
+			selected = undefined
+			currentIndex = -1
+
+			this.click = (id, index, controller) ->
 		]
 
 ]
@@ -66,13 +88,22 @@ app.directive 'feeditem', [
 			transclude: true
 			replace: true
 			template: """<section class="feed-item well" id = "f{{feed.id}}"><div ng-transclude></div></section>"""
-			controller: ["$scope", ($scope) ->
-			]
-			link: (scope, element, attrs, controller) ->
-				feedId = scope.feed.id
+			controller: ["$scope", "Feed", "FeedList", ($scope, Feed, FeedList) ->
+				feedId = $scope.feed.id
 
+				$scope.click = ->
+					FeedList.click feedId, $scope.$index, $scope
+					$scope.markRead $scope.feed if not $scope.feed.read
+
+				$scope.markRead = (feed) ->
+					a = new Feed { id: feedId }
+					a.$read!
+					feed.read = true
+			]
+
+			link: (scope, element, attrs, controller) ->
 				element.bind 'click', ->
-					controller.click feedId, scope
+					scope.$apply -> scope.click!
 
 				scope.select = ->
 					element.addClass 'feed-selected'
@@ -80,5 +111,7 @@ app.directive 'feeditem', [
 				scope.unselect = ->
 					element.removeClass 'feed-selected'
 
+				#if "f#feedId" is scope.hash
+				#	click!
 		}
 ]
