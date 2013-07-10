@@ -199,7 +199,7 @@ var contains = function(list, x) {
 var insertFeed = function(channel) {
 	return function(feed) {
 		var rss = feed.rss.channel[0]
-		getItemsToInsert(channel.channel_id, rss.item).then(function(items) {
+		return getItemsToInsert(channel.channel_id, rss.item).then(function(items) {
 			return items.map(function(item) {
 				var o = {
 					channel_id: channel.channel_id,
