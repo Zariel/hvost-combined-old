@@ -104,6 +104,23 @@ var server = function(db) {
 		}))
 	})
 
+	app.get('/api/feed/:id/read', function(req, res) {
+		var id = req.params.id
+		if(!id) {
+			return res.send(400)
+		}
+
+		exWrap(res, db.markRead(id).then(db.getFeedItem(id).then(function(items) {
+			var item = items[0]
+			item.id = item.item_id
+
+			delete item.hash
+			delete item.item_id
+
+			res.json(200, item)
+		})))
+	})
+
 	app.get('/api/feed/unread/:id', function(req, res) {
 		var id = req.params.id
 	})
