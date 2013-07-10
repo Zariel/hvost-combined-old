@@ -72,6 +72,10 @@ if(cluster.isMaster) {
 }
 
 var log = function(msg) {
+	if(typeof(msg) !== 'string') {
+		msg = JSON.stringify(msg, null, 2)
+	}
+
 	console.log("[" + cluster.worker.id + "] " + msg)
 }
 
