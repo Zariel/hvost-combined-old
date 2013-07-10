@@ -77,7 +77,7 @@ var server = function(db) {
 			// todo: Only send feeds which are pubed >= If-Modified-Since
 			var last
 
-			feeds.map(function(feed) {
+			feeds = feeds.map(function(feed) {
 				feed.id = feed.item_id
 
 				if(!last || feed.published > last) {
