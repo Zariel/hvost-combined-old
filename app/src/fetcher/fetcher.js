@@ -47,6 +47,14 @@ if(cluster.isMaster) {
 		}).catch(console.log)
 	}
 
+	redis.keys("tmp*", function(err, res) {
+		var multi = redis.multi()
+		res.forEach(function(x) {
+			multi.del(x)
+		})
+		multi.exec()
+	})
+
 	run()
 	//var id = setInterval(run, 5 * 60 * 1000)
 
