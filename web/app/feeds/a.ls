@@ -10,5 +10,6 @@ app.config [
 			resolve: {
 				feed: 'FeedResolver'
 			}
+			reloadOnSearch: false
 		}
 ]

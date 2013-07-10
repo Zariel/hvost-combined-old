@@ -37,18 +37,23 @@ app.factory 'FeedResolver', [
 app.directive 'feedlist', [
 	->
 		restrict: 'E'
-		controller: ["$scope", ($scope) ->
+		controller: ["$scope", "$location", ($scope, $location) ->
 			selected = undefined
 
 			this.click = (id, controller) ->
+				var hash
+
 				if selected and selected is controller
 					controller.unselect!
 					selected := void
+					hash = ''
 				else
 					selected.unselect! if selected
 					controller.select!
 					selected := controller
+					hash = "f#id"
 
+				$scope.$apply -> $location.hash hash .replace!
 		]
 
 ]
@@ -60,7 +65,7 @@ app.directive 'feeditem', [
 			restrict: 'E'
 			transclude: true
 			replace: true
-			template: """<section class="feed-item well"><div ng-transclude></div></section>"""
+			template: """<section class="feed-item well" id = "f{{feed.id}}"><div ng-transclude></div></section>"""
 			controller: ["$scope", ($scope) ->
 			]
 			link: (scope, element, attrs, controller) ->
