@@ -34,6 +34,47 @@ app.factory 'FeedResolver', [
 		defer.promise
 ]
 
-app.directive 'FeedView', {
-	
-}
+app.directive 'feedlist', [
+	->
+		restrict: 'E'
+		controller: ["$scope", ($scope) ->
+			selected = undefined
+
+			this.click = (id, controller) ->
+				if selected and selected is controller
+					controller.unselect!
+					selected := void
+				else
+					selected.unselect! if selected
+					controller.select!
+					selected := controller
+
+		]
+
+]
+
+app.directive 'feeditem', [
+	->
+		{
+			require: '^feedlist'
+			restrict: 'E'
+			transclude: true
+			replace: true
+			template: """<section class="feed-item well"><div ng-transclude></div></section>"""
+			controller: ["$scope", ($scope) ->
+			]
+			link: (scope, element, attrs, controller) ->
+				feedId = scope.feed.id
+
+				element.bind 'click', ->
+					controller.click feedId, scope
+
+				scope.select = ->
+					element.toggleClass 'feed-selected'
+					element.scrollIntoView!
+
+				scope.unselect = ->
+					element.removeClass 'feed-selected'
+
+		}
+]
