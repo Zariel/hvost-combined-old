@@ -58,6 +58,9 @@ var server = function(db) {
 	var feedCache = {}
 	app.get('/api/feed/:id', function(req, res) {
 		var id = req.params.id
+		if(!id) {
+			return res.send(400)
+		}
 
 		var modSince = req.get("If-Modified-Since")
 
