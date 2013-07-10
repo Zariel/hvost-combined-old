@@ -1,7 +1,7 @@
 .fluid-container#feed-body
 	.row-fluid
 		feedList
-			feedItem(ng-repeat = 'feed in feeds')
+			feedItem(ng-repeat = 'feed in feeds | unread')
 				h2
 					a(ng-href = "{{feed.link}}") {{ feed.title }}
 				div(ng-bind-html-unsafe = "feed.description")
