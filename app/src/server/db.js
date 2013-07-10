@@ -55,7 +55,15 @@ var DB = (function() {
 	}
 
 	DB.prototype.getFeed = function(id) {
-		return this.query("SELECT * FROM Items WHERE channel_id = ?", [id])
+		return this.query("SELECT * FROM Items WHERE channel_id = ? AND `read` = 0 ORDER BY published", [id])
+	}
+
+	DB.prototype.markRead = function(id) {
+		return this.query("UPDATE Items SET `read` = 1 WHERE item_id = ?", [id])
+	}
+
+	DB.prototype.getFeedItem = function(id) {
+		return this.query("SELECT * FROM Items WHERE item_id = ?", [id])
 	}
 
 	return DB
