@@ -100,7 +100,7 @@ var server = function(db) {
 			})
 
 			redis.setFeedLatest(id, last)
-			res.send(200, feeds)
+			res.json(200, feeds)
 		}))
 	})
 
