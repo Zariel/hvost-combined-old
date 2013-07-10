@@ -70,8 +70,7 @@ app.directive 'feeditem', [
 					controller.click feedId, scope
 
 				scope.select = ->
-					element.toggleClass 'feed-selected'
-					element.scrollIntoView!
+					element.addClass 'feed-selected'
 
 				scope.unselect = ->
 					element.removeClass 'feed-selected'
