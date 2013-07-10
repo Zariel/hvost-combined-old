@@ -1,8 +1,9 @@
 var Q = require('Q')
 var request = require('request')
 var xml2js = require('xml2js')
-var parseRSS = require('./feeds').parseRSS
+var parseRSS = require('../server/feeds').parseRSS
 var crypto = require("crypto")
+var cluster = require("cluster")
 
 var redis = require("redis").createClient()
 
@@ -13,7 +14,77 @@ var config = {
 	database: 'recess'
 }
 
-var db = require('./db')(config)
+var db = require('../server/db')(config)
+
+//		fetchFeed(channel).then(parseRSS).then(insertFeed(channel)).catch(console.log)
+
+var CHANNEL_QUEUE = "queue.channel"
+
+if(cluster.isMaster) {
+	var os = require("os")
+	var cpus = os.cpus().length
+
+	var workers = []
+
+	for(var i = 0; i < cpus; i++) {
+		var worker = cluster.fork()
+
+		worker.on("error", function(err) {
+			console.log(err)
+		})
+
+		workers[i] = worker
+	}
+
+	var fetchFeeds = function(channels) {
+	}
+
+	var run = function() {
+		db.getChannels().then(function(channels) {
+			channels.forEach(function(channel) {
+				redis.rpush(CHANNEL_QUEUE, JSON.stringify(channel))
+			})
+		}).catch(console.log)
+	}
+
+	run()
+	//var id = setInterval(run, 5 * 60 * 1000)
+
+	/*
+	process.on("SIGINT", function() {
+
+		for(var i in workers) {
+			var worker = workers[i]
+			worker.send("stop")
+		}
+	})
+	*/
+
+	return
+}
+
+var log = function(msg) {
+	console.log("[" + cluster.worker.id + "] " + msg)
+}
+
+/* TODO: Move this into unified redis lib */
+var redisQ = function(defer) {
+	return function(err, res) {
+		if(err) {
+			return defer.reject(err)
+		}
+
+		return defer.resolve(res)
+	}
+}
+
+var brpop = function(list, timeout) {
+	var defer = Q.defer()
+
+	redis.brpop(list, timeout, redisQ(defer))
+
+	return defer.promise
+}
 
 var fetchFeed = function(feed) {
 	var url = feed.url
@@ -68,16 +139,6 @@ var setCachedItems = function(channel, items) {
 
 var hashItems = function(x) {
 	return hash(x.link[0])
-}
-
-var redisQ = function(defer) {
-	return function(err, res) {
-		if(err) {
-			return defer.reject(err)
-		}
-
-		return defer.resolve(res)
-	}
 }
 
 var sadd = function(key, items) {
@@ -144,7 +205,7 @@ var insertFeed = function(channel) {
 
 				sadd("fetched.items." + channel.channel_id, o.hash).catch(console.log)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
-					console.log("Succfully inserted " + o.title)
+					log("Succfully inserted " + o.title)
 				}).catch(console.log)
 			})
 		})
@@ -159,20 +220,14 @@ var insertFeed = function(channel) {
 	}
 }
 
-var fetchFeeds = function(channels) {
-	channels.forEach(function(channel) {
-		fetchFeed(channel).then(parseRSS).then(insertFeed(channel)).catch(console.log)
+var run
+run = function() {
+	brpop(CHANNEL_QUEUE, 0).then(function(channel) {
+		channel = JSON.parse(channel[1])
+		return fetchFeed(channel).then(parseRSS).then(insertFeed(channel))
+	}).then(run).catch(function(err) {
+		throw err
 	})
 }
-
-var run = function() {
-	db.getChannels().then(fetchFeeds).catch(console.log)
-}
-
-var id = setInterval(run, 5 * 60 * 1000)
-
-process.on("SIGINT", function() {
-	console.log("Got SIGINT")
-})
 
 run()
