@@ -1,5 +1,11 @@
 .fluid-container#feed-body
 	.row-fluid
-		section(ng-repeat = 'feed in feeds')
-			h2 {{ feed.title }}
-			p(ng-bind-html-unsafe = "feed.description")
+		feedList
+			feedItem(ng-repeat = 'feed in feeds')
+				h2
+					a(ng-href = "{{feed.link}}") {{ feed.title }}
+				div(ng-bind-html-unsafe = "feed.description")
+				div
+					span {{ feed.published | date }}
+					span read
+					input(type = "checkbox", ng-model = "feed.read")
