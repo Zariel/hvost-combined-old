@@ -4,10 +4,7 @@ var path = require('path')
 var redis = require("./redis")
 
 var exWrap = function(res, promise) {
-	promise.then(function(){}, function(err) {
-		console.log(err)
-		return res.send(500)
-	}).catch(function(err) {
+	promise.catch(function(err) {
 		console.log(err)
 		return res.send(500)
 	})
