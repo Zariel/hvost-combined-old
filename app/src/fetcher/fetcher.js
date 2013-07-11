@@ -47,27 +47,11 @@ if(cluster.isMaster) {
 		}).catch(console.log)
 	}
 
-	redis.keys("tmp*", function(err, res) {
-		var multi = redis.multi()
-		res.forEach(function(x) {
-			multi.del(x)
-		})
-		multi.del(CHANNEL_QUEUE)
-		multi.exec()
+	redis.del(CHANNEL_QUEUE, function() {
+		var id = setInterval(run, 5 * 60 * 1000)
+
+		run()
 	})
-
-	run()
-	//var id = setInterval(run, 5 * 60 * 1000)
-
-	/*
-	process.on("SIGINT", function() {
-
-		for(var i in workers) {
-			var worker = workers[i]
-			worker.send("stop")
-		}
-	})
-	*/
 
 	return
 }
