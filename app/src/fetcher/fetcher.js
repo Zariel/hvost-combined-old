@@ -257,7 +257,7 @@ var smembers = function(set) {
 var getItemsToInsert = function(channel, items) {
 	return smembers("fetched.items." + channel).then(function(stored) {
 		return items.filter(function(x) {
-			return !contains(stored, x)
+			return !contains(stored, hashItems(x))
 		}).reverse()
 	})
 }
