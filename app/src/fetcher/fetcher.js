@@ -99,8 +99,23 @@ var brpop = function(list, timeout) {
 	return defer.promise
 }
 
-var fetchFeed = function(feed) {
-	var url = feed.url
+var getEtagFromRedis = function(channel) {
+	var defer = Q.defer()
+
+	redis.hgetall("channel.http.cache." + channel.channel_id, redisQ(defer))
+
+	return defer.promise
+}
+
+var setEtagRedis = function(channel, cache) {
+	var defer = Q.defer()
+
+	redis.hmset("channel.http.cache." + channel.channel_id, cache, redisQ(defer))
+
+	return defer.promise
+}
+
+var requestQ = function(url) {
 	var defer = Q.defer()
 
 	request(url, function(err, res, body) {
@@ -108,10 +123,86 @@ var fetchFeed = function(feed) {
 			return defer.reject(res)
 		}
 
-		return defer.resolve(body)
+		return defer.resolve({
+			body:body,
+			res:res
+		})
 	})
 
 	return defer.promise
+}
+
+var logQ = function(err) {
+	console.log(err.stack)
+}
+
+// Store etags and Last-Modified headers in redis
+
+var handleHTTPCache = function(channel) {
+	return function(o) {
+
+		var body = o.body
+		var res = o.res
+
+		if(res.statusCode === 304) {
+			return
+		}
+
+		var cacheControl = res.headers["cache-control"]
+		if(cacheControl) {
+			var control = cacheControl.split(", ")
+			for(var i = 0; i < control.length; i++) {
+				if(control[i] === 'no-cache') {
+					return body
+				}
+			}
+		}
+
+		var toCache
+		if(res.headers.etag) {
+			toCache = toCache || {}
+			toCache["etag"] = res.headers["etag"]
+		}
+
+		if(res.headers["last-modified"]) {
+			toCache = toCache || {}
+			toCache["last-modified"] = res.headers["last-modified"]
+		}
+
+		if(toCache) {
+			setEtagRedis(channel, toCache).catch(logQ)
+		}
+
+		return body
+	}
+}
+
+var fetchFeed = function(channel) {
+	var config = {
+		uri: channel.url,
+		headers: {}
+	}
+
+	return getEtagFromRedis(channel).then(function(cached) {
+		// LiveScript would make this syntax nice, though I wish Q would allow multiple args to be
+		// resolved at once. Maybe PR
+
+		// Lookup cached etag for channel
+		if(cached) {
+			if(cached.etag) {
+				config.headers["if-none-match"] = cached.etag
+			}
+			if(cached["last-modifed"]) {
+				config.headers["if-modified-since"] = cached["last-modifed"]
+			}
+		}
+
+		return requestQ(config).then(handleHTTPCache(channel)).then(function(res) {
+			if(res) {
+				return res
+			}
+		})
+	})
 }
 
 var parseRssDate = function(rssDate) {
