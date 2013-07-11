@@ -52,6 +52,7 @@ if(cluster.isMaster) {
 		res.forEach(function(x) {
 			multi.del(x)
 		})
+		multi.del(CHANNEL_QUEUE)
 		multi.exec()
 	})
 
