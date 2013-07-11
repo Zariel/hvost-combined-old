@@ -61,7 +61,7 @@ var log = function(msg) {
 		msg = JSON.stringify(msg, null, 2)
 	}
 
-	console.log("[" + cluster.worker.id + "] " + msg)
+	console.log("[" + new Date() + "]][" + cluster.worker.id + "] " + msg)
 }
 
 /* TODO: Move this into unified redis lib */
@@ -129,6 +129,7 @@ var handleHTTPCache = function(channel) {
 		var res = o.res
 
 		if(res.statusCode === 304) {
+			log("Got 304 from " + channel.title)
 			return
 		}
 
@@ -288,8 +289,8 @@ var insertFeed = function(channel) {
 
 				sadd("fetched.items." + channel.channel_id, o.hash).catch(console.log)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
-					log("Succfully inserted " + o.title)
-				}).catch(console.log)
+					log("Successfully inserted " + o.title)
+				})
 			})
 		})
 
@@ -307,6 +308,7 @@ var run
 run = function() {
 	brpop(CHANNEL_QUEUE, 0).then(function(channel) {
 		channel = JSON.parse(channel[1])
+		log("Checking for new items from " + channel.title)
 		return fetchFeed(channel).then(parseRSS).then(insertFeed(channel))
 	}).then(run).catch(function(err) {
 		throw err
