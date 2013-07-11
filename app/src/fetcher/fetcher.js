@@ -246,6 +246,14 @@ var sdiff = function(a, b) {
 	return defer.promise
 }
 
+var smembers = function(set) {
+	var defer = Q.defer()
+
+	redis.smembers(set, redisQ(defer))
+
+	return defer.promise
+}
+
 var getItemsToInsert = function(channel, items) {
 	return smembers("fetched.items." + channel).then(function(stored) {
 		return items.filter(function(x) {
