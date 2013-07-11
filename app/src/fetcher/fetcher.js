@@ -262,15 +262,10 @@ var sdiff = function(a, b) {
 }
 
 var getItemsToInsert = function(channel, items) {
-	var key = "tmp.itemstoinsert." + channel + "." + new Date().getTime()
-	return sadd(key, items.map(hashItems)).then(function(res) {
-		return sdiff(key, "fetched.items." + channel).then(function(res) {
-			redis.del(key)
-
-			return items.filter(function(x) {
-				return contains(res, hashItems(x))
-			})
-		})
+	return smembers("fetched.items." + channel).then(function(stored) {
+		return items.filter(function(x) {
+			return !contains(stored, x)
+		}).reverse()
 	})
 }
 
