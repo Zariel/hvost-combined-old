@@ -36,15 +36,18 @@ if(cluster.isMaster) {
 		workers[i] = worker
 	}
 
-	var fetchFeeds = function(channels) {
-	}
-
 	var run = function() {
 		db.getChannels().then(function(channels) {
 			channels.forEach(function(channel) {
-				redis.rpush(CHANNEL_QUEUE, JSON.stringify(channel))
+				redis.rpush(CHANNEL_QUEUE, JSON.stringify(channel), function(err, res) {
+					if(err) {
+						console.log(err)
+					}
+				})
 			})
-		}).catch(console.log)
+		}).catch(function(err) {
+			console.log(err.stack)
+		})
 	}
 
 	redis.del(CHANNEL_QUEUE, function() {
@@ -62,6 +65,11 @@ var log = function(msg) {
 	}
 
 	console.log("[" + new Date() + "]][" + cluster.worker.id + "] " + msg)
+}
+
+// Logs an error from a Q
+var logErr = function(err) {
+	console.log(err.stack)
 }
 
 /* TODO: Move this into unified redis lib */
@@ -116,10 +124,6 @@ var requestQ = function(url) {
 	return defer.promise
 }
 
-var logQ = function(err) {
-	console.log(err.stack)
-}
-
 // Store etags and Last-Modified headers in redis
 
 var handleHTTPCache = function(channel) {
@@ -155,22 +159,21 @@ var handleHTTPCache = function(channel) {
 		}
 
 		if(toCache) {
-			setEtagRedis(channel, toCache).catch(logQ)
+			setEtagRedis(channel, toCache).catch(logErr)
 		}
 
 		return body
 	}
 }
 
-var fetchFeed = function(channel) {
-	var config = {
-		uri: channel.url,
-		headers: {}
-	}
+var id = function(x) { return x }
 
-	return getEtagFromRedis(channel).then(function(cached) {
-		// LiveScript would make this syntax nice, though I wish Q would allow multiple args to be
-		// resolved at once. Maybe PR
+var getFeedURL = function(channel) {
+	return function(cached) {
+		var config = {
+			uri: channel.url,
+			headers: {}
+		}
 
 		// Lookup cached etag for channel
 		if(cached) {
@@ -182,12 +185,12 @@ var fetchFeed = function(channel) {
 			}
 		}
 
-		return requestQ(config).then(handleHTTPCache(channel)).then(function(res) {
-			if(res) {
-				return res
-			}
-		})
-	})
+		return config
+	}
+}
+
+var fetchFeed = function(channel) {
+	return getEtagFromRedis(channel).then(getFeedURL(channel)).then(requestQ).then(handleHTTPCache(channel))
 }
 
 var parseRssDate = function(rssDate) {
@@ -284,7 +287,7 @@ var insertFeed = function(channel) {
 	return function(feed) {
 		var rss = feed.rss.channel[0]
 		return getItemsToInsert(channel.channel_id, rss.item).then(function(items) {
-			return items.map(function(item) {
+			return Q.allSettled(items.map(function(item) {
 				var o = {
 					channel_id: channel.channel_id,
 					title: item.title[0],
@@ -295,11 +298,11 @@ var insertFeed = function(channel) {
 					published: parseRssDate(item.pubDate[0])
 				}
 
-				sadd("fetched.items." + channel.channel_id, o.hash).catch(console.log)
+				sadd("fetched.items." + channel.channel_id, o.hash).catch(logErr)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
 					log("Successfully inserted " + o.title)
 				})
-			})
+			}))
 		})
 
 		// Q.allSettled(promises).then(function(result) {
@@ -312,14 +315,19 @@ var insertFeed = function(channel) {
 	}
 }
 
+Q.longStackSupport = true
 var run
 run = function() {
 	brpop(CHANNEL_QUEUE, 0).then(function(channel) {
 		channel = JSON.parse(channel[1])
 		log("Checking for new items from " + channel.title)
-		return fetchFeed(channel).then(parseRSS).then(insertFeed(channel))
+		return fetchFeed(channel).then(function(rss) {
+			if(rss) {
+				return parseRSS(rss).then(insertFeed(channel))
+			}
+		})
 	}).then(run).catch(function(err) {
-		throw err
+		log(err.stack)
 	})
 }
 
