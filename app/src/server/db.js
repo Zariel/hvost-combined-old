@@ -50,7 +50,8 @@ var DB = (function() {
 	}
 
 	DB.prototype.getChannels = function() {
-		return this.query("SELECT * FROM Channels;")
+		//return this.query("SELECT Channels.* FROM Channels;")
+		return this.query("SELECT Channels.*, COUNT(Items.item_id) as unread_count FROM Channels LEFT JOIN Items USING (channel_id) WHERE Items.read = 0 GROUP BY Channels.channel_id");
 	}
 
 	DB.prototype.getFeed = function(id) {
