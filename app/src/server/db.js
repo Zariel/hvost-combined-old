@@ -28,25 +28,25 @@ var DB = (function() {
 	}
 
 	// This passes arguments directly to mysql.connection.query
-	DB.prototype.query = function() {
-		var defer = Q.defer()
+	DB.prototype.query = function(sql, vals) {
+		var pool = this.pool
+		return this.getConnection().then(function(conn) {
+			var defer = Q.defer()
 
-		var args = Array.prototype.slice.call(arguments)
-		args.push(function(err, rows) {
-			if (err) {
-				console.log(err)
-				return defer.reject(err)
-			}
+			conn.query(sql, vals, function(err, rows) {
+				// For some reason the program hangs if I dont destroy the connections, which
+				// kind of defeats the purpous.
+				conn.destroy()
 
-			return defer.resolve(rows)
+				if(err) {
+					return defer.reject(err)
+				}
+
+				defer.resolve(rows)
+			})
+
+			return defer.promise
 		})
-
-		this.getConnection().then(function(con){
-			con.query.apply(con, args);
-			return con.end()
-		})
-
-		return defer.promise
 	}
 
 	DB.prototype.getChannels = function() {
