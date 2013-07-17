@@ -6,6 +6,7 @@ var crypto = require("crypto")
 var cluster = require("cluster")
 
 var redis = require("redis").createClient()
+var redisQ = require("../lib/redisQ")(redis)
 
 var config = {
 	host: 'localhost',
@@ -64,47 +65,21 @@ var log = function(msg) {
 		msg = JSON.stringify(msg, null, 2)
 	}
 
-	console.log("[" + new Date() + "]][" + cluster.worker.id + "] " + msg)
+	console.log("[" + new Date() + "][" + cluster.worker.id + "] " + msg)
 }
 
 // Logs an error from a Q
 var logErr = function(err) {
-	console.log(err.stack)
+	log(err.stack)
 }
 
 /* TODO: Move this into unified redis lib */
-var redisQ = function(defer) {
-	return function(err, res) {
-		if(err) {
-			return defer.reject(err)
-		}
-
-		return defer.resolve(res)
-	}
-}
-
-var brpop = function(list, timeout) {
-	var defer = Q.defer()
-
-	redis.brpop(list, timeout, redisQ(defer))
-
-	return defer.promise
-}
-
 var getEtagFromRedis = function(channel) {
-	var defer = Q.defer()
-
-	redis.hgetall("channel.http.cache." + channel.channel_id, redisQ(defer))
-
-	return defer.promise
+	return redisQ.hgetall("channel.http.cache." + channel.channel_id)
 }
 
 var setEtagRedis = function(channel, cache) {
-	var defer = Q.defer()
-
-	redis.hmset("channel.http.cache." + channel.channel_id, cache, redisQ(defer))
-
-	return defer.promise
+	return redisQ.hmset("channel.http.cache." + channel.channel_id, cache)
 }
 
 var requestQ = function(url) {
@@ -133,7 +108,6 @@ var handleHTTPCache = function(channel) {
 		var res = o.res
 
 		if(res.statusCode === 304) {
-			log("Got 304 from " + channel.title)
 			return
 		}
 
@@ -166,6 +140,31 @@ var handleHTTPCache = function(channel) {
 	}
 }
 
+var parseRssDate = function(rssDate) {
+	// Time to attempt to parse every rss date format in the world
+	return new Date(rssDate)
+}
+
+var hash = function(s) {
+	var hash = crypto.createHash("sha256")
+	hash.update(s)
+	return hash.digest("hex")
+}
+
+var hashItem = function(item) {
+	return hash(item.link[0])
+}
+
+var contains = function(list, x) {
+	for(var i in list) {
+		if(list[i] === x) {
+			return true
+		}
+	}
+
+	return false
+}
+
 var id = function(x) { return x }
 
 var getFeedURL = function(channel) {
@@ -180,6 +179,7 @@ var getFeedURL = function(channel) {
 			if(cached.etag) {
 				config.headers["if-none-match"] = cached.etag
 			}
+
 			if(cached["last-modifed"]) {
 				config.headers["if-modified-since"] = cached["last-modifed"]
 			}
@@ -191,11 +191,6 @@ var getFeedURL = function(channel) {
 
 var fetchFeed = function(channel) {
 	return getEtagFromRedis(channel).then(getFeedURL(channel)).then(requestQ).then(handleHTTPCache(channel))
-}
-
-var parseRssDate = function(rssDate) {
-	// Time to attempt to parse every rss date format in the world
-	return new Date(rssDate)
 }
 
 var getGUID = function(guid) {
@@ -213,52 +208,9 @@ var getGUID = function(guid) {
 	}
 }
 
-var hash = function(s) {
-	var hash = crypto.createHash("sha256")
-	hash.update(s)
-	return hash.digest("hex")
-}
-
-var setCachedItems = function(channel, items) {
-	var defer = Q.defer()
-
-	var feed = items.map(hashItems)
-
-	redis.sadd()
-
-	return defer.promise
-}
-
-var hashItems = function(x) {
-	return hash(x.link[0])
-}
-
-var sadd = function(key, items) {
-	var defer = Q.defer()
-
-	redis.sadd(key, items, redisQ(defer))
-
-	return defer.promise
-}
-
-var sdiff = function(a, b) {
-	var defer = Q.defer()
-
-	redis.sdiff(a, b, redisQ(defer))
-
-	return defer.promise
-}
-
-var smembers = function(set) {
-	var defer = Q.defer()
-
-	redis.smembers(set, redisQ(defer))
-
-	return defer.promise
-}
 
 var getItemsToInsert = function(channel, items) {
-	return smembers("fetched.items." + channel).then(function(stored) {
+	return redisQ.smembers("fetched.items." + channel).then(function(stored) {
 		return items.filter(function(x) {
 			return !contains(stored, hashItems(x))
 		}).reverse()
@@ -266,21 +218,7 @@ var getItemsToInsert = function(channel, items) {
 }
 
 var getCachedItems = function(channel) {
-	var defer = Q.defer()
-
-	redis.sget("fetched.items." + channel, redisQ(defer))
-
-	return defer.promise
-}
-
-var contains = function(list, x) {
-	for(var i in list) {
-		if(list[i] === x) {
-			return true
-		}
-	}
-
-	return false
+	return redisQ.sget("fetched.items." + channel)
 }
 
 var insertFeed = function(channel) {
@@ -298,7 +236,7 @@ var insertFeed = function(channel) {
 					published: parseRssDate(item.pubDate[0])
 				}
 
-				sadd("fetched.items." + channel.channel_id, o.hash).catch(logErr)
+				redisQ.sadd("fetched.items." + channel.channel_id, o.hash).catch(logErr)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
 					log("Successfully inserted " + o.title)
 				})
