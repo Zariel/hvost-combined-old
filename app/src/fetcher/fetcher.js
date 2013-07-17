@@ -328,6 +328,7 @@ run = function() {
 		})
 	}).then(run).catch(function(err) {
 		log(err.stack)
+		run()
 	})
 }
 
