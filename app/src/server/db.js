@@ -16,16 +16,15 @@ var DB = (function() {
 	DB.prototype.getConnection = function() {
 		var defer = Q.defer()
 
-		this.pool.getConnection(function(err, con) {
-			if (err) {
-				console.log(err)
+		this.pool.getConnection(function(err, conn) {
+			if(err) {
 				return defer.reject(err)
 			}
 
-			return defer.resolve(con)
+			defer.resolve(conn)
 		})
 
-		return defer.promise;
+		return defer.promise
 	}
 
 	// This passes arguments directly to mysql.connection.query
