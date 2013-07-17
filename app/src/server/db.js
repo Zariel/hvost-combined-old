@@ -66,6 +66,33 @@ var DB = (function() {
 		return this.query("SELECT * FROM Items WHERE item_id = ?", [id])
 	}
 
+	DB.prototype.getGroupId = function(name) {
+		return this.query("SELECT group_id FROM Groups WHERE name = ?", [name])
+	}
+
+	DB.prototype.insertAndGetGroup = function(name) {
+		var this$ = this
+		var defer = Q.defer()
+
+		this$.query("INSERT INTO Groups SET name = ?", [name]).then(function(res) {
+			defer.resolve(res.insertId)
+		}, function(err) {
+			if(err.code !== 'ER_DUP_ENTRY') {
+				return defer.reject(err)
+			}
+
+			this$.query("SELECT group_id FROM Groups WHERE name = ?", [name]).then(function(res) {
+				defer.resolve(res[0].group_id)
+			}, function(err) {
+				defer.reject(err)
+			})
+		}).catch(function(err) {
+			console.log(err.stack)
+		})
+
+		return defer.promise
+	}
+
 	return DB
 })()
 
