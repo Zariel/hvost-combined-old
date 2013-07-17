@@ -230,7 +230,7 @@ var insertFeed = function(channel) {
 					channel_id: channel.channel_id,
 					title: item.title[0],
 					link: item.link[0],
-					description: item.description[0],
+					description: item.description ? item.description[0] : "<no content>",
 					guid: getGUID(item.guid[0]),
 					hash: hash(item.link[0]),
 					published: parseRssDate(item.pubDate[0])
