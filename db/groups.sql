@@ -4,4 +4,3 @@ CREATE TABLE `Groups` (
 	`name` VARCHAR(128) NOT NULL UNIQUE,
 	PRIMARY KEY (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-INSERT INTO `Groups` SET name = '__default';
