@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS `Groups`;
+CREATE TABLE `Groups` (
+	`group_id` INT(64) NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(128) NOT NULL UNIQUE,
+	PRIMARY KEY (`group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO `Groups` SET name = '__default';
