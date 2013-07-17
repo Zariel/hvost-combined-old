@@ -19,6 +19,7 @@ var db = require('../server/db')(config)
 
 //		fetchFeed(channel).then(parseRSS).then(insertFeed(channel)).catch(console.log)
 
+// TODO: Rewrite this, horrible mess.
 var CHANNEL_QUEUE = "queue.channel"
 
 if(cluster.isMaster) {
@@ -51,6 +52,7 @@ if(cluster.isMaster) {
 		})
 	}
 
+	// Dont want to delete the queue while we have workers waiting or while we insert.
 	redis.del(CHANNEL_QUEUE, function() {
 		var id = setInterval(run, 5 * 60 * 1000)
 
@@ -238,7 +240,7 @@ var insertFeed = function(channel) {
 
 				redisQ.sadd("fetched.items." + channel.channel_id, o.hash).catch(logErr)
 				return db.query("INSERT INTO items SET ?", o).then(function(res) {
-					log("Successfully inserted " + o.title)
+					log(channel.title + " => " + o.title)
 				})
 			}))
 		})
@@ -258,7 +260,8 @@ var run
 run = function() {
 	brpop(CHANNEL_QUEUE, 0).then(function(channel) {
 		channel = JSON.parse(channel[1])
-		log("Checking for new items from " + channel.title)
+		//console.log(channel.ttl)
+		//log("Checking for new items from " + channel.title)
 		return fetchFeed(channel).then(function(rss) {
 			if(rss) {
 				return parseRSS(rss).then(insertFeed(channel))
