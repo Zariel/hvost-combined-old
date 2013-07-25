@@ -12,10 +12,10 @@ html(lang = 'en', ng-app = 'recess')
 		title("hej")
 
 	body
-		.fluid-container
-			.row-fluid
-				.span2
-					ng-include(src = "'/partials/controls.html'")
-				.span10
+		ng-include(src = "'/partials/nav.html'")
+		div#content
+			ng-include(src = "'/partials/controls.html'")
+			.fluid-container
+				.row-fluid
 					#main(ng-view)
 

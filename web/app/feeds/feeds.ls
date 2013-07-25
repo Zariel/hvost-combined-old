@@ -115,12 +115,20 @@ app.directive 'feeditem', [
 			restrict: 'E'
 			transclude: true
 			replace: true
-			template: """<section class="feed-item well" id = "f{{feed.id}}"><div ng-transclude></div></section>"""
+			template: """
+				<section class = "feed-outer" id = {{id}}>
+					<section class = "feed-item well {{clazz}}">
+						<div ng-transclude>
+						</div>
+					</section>
+				</section>"""
 			controller: ["$scope", "Feed", ($scope, Feed) ->
 			]
 
 			link: (scope, element, attrs, controller) ->
 				feed = scope.feed
+
+				scope.id = "f" + feed.id
 
 				controller.addItem feed, scope.$index, scope
 
@@ -128,11 +136,13 @@ app.directive 'feeditem', [
 					scope.$apply ->
 						controller.click feed, scope.$index, scope
 
+
+				scope.clazz = ""
 				scope.select = ->
-					element.addClass 'feed-selected'
+					scope.clazz = "feed-selected"
 
 				scope.unselect = ->
-					element.removeClass 'feed-selected'
+					scope.clazz = ""
 
 				#if "f#feedId" is scope.hash
 				#	click!

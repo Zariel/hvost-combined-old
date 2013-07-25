@@ -3,30 +3,34 @@
 @import "/vendor/styles/fontawesome/font-awesome.less";
 
 body {
-	margin: 10px;
+	padding-top: 40px;
+	position: relative;
 }
 
+#content {
+	position: absolute;
+	top: 40px;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
 
 #channels {
 	width: 230px;
 	overflow: hidden;
-	position: absolute;
+	position: fixed;
 
-	bottom: 0;
-	top: 0;
+	top: 40px;
 	left: 0;
 
 	padding-left: 10px;
 	padding-top: 10px;
 }
 
-
 #feed-body {
 	position: absolute;
 	overflow-y: auto;
 
-	bottom: 0;
-	top: 0;
 	right: 0;
 	left: 250px;
 
@@ -38,6 +42,11 @@ body {
 	border-style: solid;
 	border-color: red;
 	border-width: 3px;
+}
+
+.feed-outer {
+	padding-top: 50px;
+	margin-top: -50px;
 }
 
 .feed-item {
