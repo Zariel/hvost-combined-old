@@ -74,6 +74,7 @@ app.directive 'feedlist', [
 					selected.unselect! if selected
 					controller.select!
 					selected := controller
+					currentIndex := index
 					hash = "f#id"
 
 				console.log hash
