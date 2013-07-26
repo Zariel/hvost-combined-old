@@ -77,8 +77,6 @@ app.directive 'feedlist', [
 					currentIndex := index
 					hash = "f#id"
 
-				console.log hash
-
 				$location.hash hash .replace!
 
 			this.addItem = (feed, index, scope) ->
