@@ -39,8 +39,9 @@ app.directive 'feedlist', [
 		controller: ["$scope", "$location", "$window", "Feed", ($scope, $location, $window, Feed) ->
 
 			$window.addEventListener 'keyup', (event, key) ->
+				# Bind space and j to next and k to previous
 				key = event.keyCode
-				if key is 74
+				if key in [74, 32]	# this compiles nicely
 					$scope.$apply next
 				else if key is 75
 					$scope.$apply prev
