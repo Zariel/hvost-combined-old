@@ -1,9 +1,11 @@
 app = angular.module 'recess', [
 	'ngResource'
 
+	'indexdb'
+	'infinite-scroll'
+
 	'recess.feeds'
 	'recess.controls'
-	'indexdb'
 ]
 
 app.config [

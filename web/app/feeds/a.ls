@@ -18,7 +18,7 @@ app.config [
 
 						id = $route.current.params.id
 
-						Feed.query { id }, ((feed) ->
+						Feed.query { id, from: 0, count: 25 }, ((feed) ->
 							defer.resolve feed
 						), -> defer.reject!
 

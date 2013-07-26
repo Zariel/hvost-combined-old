@@ -1,5 +1,5 @@
 .fluid-container#feed-body
-	.row-fluid
+	.row-fluid(infinite-scroll = 'nextPage()', infinite-scroll-disabled = 'busy', infinite-scroll-distance = '1')
 		feedList
 			feedItem(ng-repeat = 'feed in feeds | unread')
 				h2

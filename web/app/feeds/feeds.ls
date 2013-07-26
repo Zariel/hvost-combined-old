@@ -5,8 +5,19 @@ app.controller 'FeedController', [
 	'Feed'
 	($scope, $route, Feed) ->
 		$scope.feeds = $route.current.locals.feed
-		$scope.$watch $route.current.params.id, (id) ->
-			$scope.feeds = Feed.query { id }
+		$scope.busy = false
+
+		count = 25
+		start = 25
+		id = $route.current.params.id
+
+		$scope.nextPage = ->
+			return if $scope.busy
+			$scope.busy = true
+			Feed.query { id, from: start, count }, (feed) ->
+				$scope.feeds = $scope.feeds.concat feed
+				start := start + feed.length
+				$scope.busy = false
 ]
 
 app.factory 'Feed', [
