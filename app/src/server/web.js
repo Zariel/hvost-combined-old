@@ -54,54 +54,70 @@ var server = function(db) {
 	// res.send(id)
  //  })
 
-	// TODO: Move this to Redis!
-	var feedCache = {}
+	/*
+	 * Get all items in a feed, currently unread.
+	 */
 	app.get('/api/feed/:id', function(req, res) {
 		var id = req.params.id
 		if(!id) {
 			return res.send(400)
 		}
 
-		var modSince = req.get("If-Modified-Since")
+		var from = req.query.from
+		var count = req.query.count
 
+		var modSince = req.get("if-modified-since")
+
+		/*
+		 * TODO: Replace this with an etag system so feeds will be updated when the
+		 * items are read.
+		*/
 		redis.getFeedLatest(id).then(function(cached) {
-
 			if(cached) {
 				if(modSince >= cached) {
 					return res.send(304)
 				}
 			}
-		})
 
-		exWrap(res, db.getFeed(id).then(function(feeds) {
-			// todo: Only send feeds which are pubed >= If-Modified-Since
-			var last
+			var feedHandler = function(feeds) {
+				// todo: Only send feeds which are pubed >= If-Modified-Since
+				var last
 
-			feeds = feeds.map(function(feed) {
-				feed.id = feed.item_id
+				feeds = feeds.map(function(feed) {
+					feed.id = feed.item_id
 
-				if(!last || feed.published > last) {
-					last = feed.published
+					if(!last || feed.published > last) {
+						last = feed.published
+					}
+
+					delete feed.item_id
+					delete feed.hash
+
+					return feed
+				})
+
+				if(!last) {
+					last = modSince
 				}
 
-				delete feed.item_id
-				delete feed.hash
+				res.set({
+					"Cache-Control": "public, max-age=300",
+					"Last-Modified": last
+				})
 
-				return feed
-			})
-
-			if(!last) {
-				last = modSince
+				redis.setFeedLatest(id, last)
+				res.json(200, feeds)
 			}
 
-			res.set({
-			 	"Last-Modified": last,
-			 	"Cache-Control": "public, max-age=300"
-			})
+			if(from !== undefined && count !== undefined) {
+				from = parseInt(from)
+				count = parseInt(count)
 
-			redis.setFeedLatest(id, last)
-			res.json(200, feeds)
-		}))
+				exWrap(res, db.getFeedLimit(id, from, count).then(feedHandler))
+			} else {
+				exWrap(res, db.getFeed(id).then(feedHandler))
+			}
+		})
 	})
 
 	app.get('/api/feed/:id/read', function(req, res) {

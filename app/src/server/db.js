@@ -63,6 +63,10 @@ var DB = (function() {
 		return this.query("SELECT * FROM Items WHERE channel_id = ? AND `read` = 0 ORDER BY published", [id])
 	}
 
+	DB.prototype.getFeedLimit = function(id, from, count) {
+		return this.query("SELECT * FROM Items WHERE channel_id = ? AND `read` = 0 ORDER BY published LIMIT ?, ?", [id, from, count])
+	}
+
 	DB.prototype.markRead = function(id) {
 		return this.query("UPDATE Items SET `read` = 1 WHERE item_id = ?", [id])
 	}
