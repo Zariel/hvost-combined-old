@@ -88,6 +88,8 @@ module.exports = function(grunt) {
 						"vendor/scripts/bootstrap/bootstrap-typeahead.js",
 						"vendor/scripts/bootstrap/bootstrap-affix.js",
 
+						"vendor/scripts/other/*.js"
+
 					]
 				}
 			}
