@@ -33,23 +33,6 @@ app.factory 'Feed', [
 		}
 ]
 
-app.factory 'FeedResolver', [
-	'$q'
-	'$route'
-	'Feed'
-
-	($q, $route, Feed) ->
-		defer = $q.defer!
-
-		id = $route.current.params.id
-
-		Feed.query { id }, ((feed) ->
-			defer.resolve feed
-		), -> defer.reject!
-
-		defer.promise
-]
-
 app.directive 'feedlist', [
 	->
 		restrict: 'E'
