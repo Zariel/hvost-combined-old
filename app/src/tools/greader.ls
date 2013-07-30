@@ -49,7 +49,7 @@ processXML = (xml) ->
 		db.insertAndGetGroup group .then (id) ->
 			processFeed x.outline, id
 
-	return Q.all p .then (list) ->
+	Q.all p .then (list) ->
 		defaultGroup.concat.apply defaultGroup, list
 
 processFeed = (root, groupId) ->
