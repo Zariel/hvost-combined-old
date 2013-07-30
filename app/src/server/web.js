@@ -2,6 +2,8 @@ var feeds = require('./feeds')
 var express = require('express')
 var path = require('path')
 var redis = require("./redis")
+var auth = require("./auth")
+var P = require("path")
 
 var exWrap = function(res, promise) {
 	promise.catch(function(err) {
@@ -20,8 +22,70 @@ var server = function(db) {
 		return next()
 	})
 
+	app.use(function(req, res, next) {
+		var path = req.path
+
+		if(P.dirname(path) === '/api/auth') {
+			return next()
+		}
+
+		var key = req.get('api-key')
+
+		if(key === undefined) {
+			return res.send(401, 'request must include a valid api key in the "api-key" header.')
+		}
+
+		auth.isValid(key).then(function(valid) {
+			if(valid) {
+				return next()
+			}
+
+			return res.send(401, 'request must include a valid api key in the "api-key" header.')
+		})
+	})
+
 	app.use(express.json())
 	app.use(express.compress())
+
+	/*
+	 * Post body of username + password, respond with api-key or 401
+	 * {
+	 * 	username: 'name',
+	 * 	password: 'password'
+	 * }
+	 * =>
+	 * {
+	 * 	'api-key': 'key..'
+	 * }
+	 */
+
+	app.post('/api/auth/login', function(req, res) {
+		var name = req.body.username
+		var passw = req.body.password
+
+		if(name === undefined || passw === undefined) {
+			return res.send(400)
+		}
+
+		exWrap(res, auth.login(name, passw).then(function(key) {
+			res.json({"api-key": key})
+		}, function(err) {
+			console.log(err.stack)
+			res.send(401, 'invalid username or password.')
+		}))
+	})
+
+	app.get('/api/auth/logout', function(req, res) {
+		var key = req.get('api-key')
+		if(key === undefined) {
+			// logout without key a noop
+			return res.send(200)
+		}
+
+		exWrap(res, auth.logout(key).then(function() {
+			res.send(200)
+		}))
+	})
 
 	app.post('/api/feed/add', function(req, res) {
 		var url = req.body['url']

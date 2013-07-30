@@ -102,6 +102,10 @@ var DB = (function() {
 		return defer.promise
 	}
 
+	DB.prototype.getUser = function(name) {
+		return this.query("SELECT * FROM Users WHERE username = ?", [name])
+	}
+
 	return DB
 })()
 
