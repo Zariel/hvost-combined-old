@@ -28,6 +28,10 @@ if(cluster.isMaster) {
 
 	var workers = []
 
+	cluster.on("exit", function(worker, code, signal) {
+		console.log("Worker #" + worker.id + " exitted with " + code)
+	})
+
 	for(var i = 0; i < cpus; i++) {
 		var worker = cluster.fork()
 
@@ -264,7 +268,9 @@ run = function() {
 		//log("Checking for new items from " + channel.title)
 		return fetchFeed(channel).then(function(rss) {
 			if(rss) {
-				return parseRSS(rss).then(insertFeed(channel))
+				return parseRSS(rss).then(insertFeed(channel), function(err) {
+					log("Channel = " + channel.title + " parse error = " + err)
+				})
 			}
 		})
 	}).then(run).catch(function(err) {
