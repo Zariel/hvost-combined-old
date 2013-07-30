@@ -68,5 +68,37 @@ module.exports = function(redis) {
 		return defer.promise
 	}
 
+	this.expire = function(key, time) {
+		var defer = Q.defer()
+
+		redis.expire(key, time, redisQ(defer))
+
+		return defer.promise
+	}
+
+	this.set = function(key, val) {
+		var defer = Q.defer()
+
+		redis.set(key, val, redisQ(defer))
+
+		return defer.promise
+	}
+
+	this.get = function(key) {
+		var defer = Q.defer()
+
+		redis.get(key, redisQ(defer))
+
+		return defer.promise
+	}
+
+	this.del = function(key) {
+		var defer = Q.defer()
+
+		redis.del(key, redisQ(defer))
+
+		return defer.promise
+	}
+
 	return this
 }
