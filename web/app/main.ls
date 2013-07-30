@@ -14,7 +14,24 @@ app.config [
 
 	($routeProvider, $locationProvider) ->
 		$routeProvider.when '/', {
-			redirectTo: '/feeds/unread'
+			controller: 'FeedController'
+			templateUrl: '/partials/feeds/feeds.html'
+			resolve: {
+				feed: [
+					'$q'
+					'Feed'
+
+					($q, Feed) ->
+						defer = $q.defer!
+
+						Feed.query { from: 0, count: 25 }, ((feed) ->
+							defer.resolve feed
+						), -> defer.reject!
+
+						defer.promise
+				]
+			}
+			reloadOnSearch: false
 		}
 
 		$locationProvider.html5Mode true .hashPrefix '!'
