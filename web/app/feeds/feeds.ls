@@ -3,8 +3,9 @@ app.controller 'FeedController', [
 	'$scope'
 	'$route'
 	'Feed'
+
 	($scope, $route, Feed) ->
-		$scope.feeds = $route.current.locals.feed
+		$scope.feeds = $route.current.locals.feed.filter unreadFilter
 		$scope.busy = false
 
 		count = 25
@@ -15,7 +16,7 @@ app.controller 'FeedController', [
 			return if $scope.busy
 			$scope.busy = true
 			Feed.query { id, from: start, count }, (feed) ->
-				$scope.feeds = $scope.feeds.concat feed
+				$scope.feeds = $scope.feeds.concat (feed.filter unreadFilter)
 				start := start + feed.length
 				$scope.busy = false
 ]
@@ -143,8 +144,9 @@ app.directive 'feeditem', [
 		}
 ]
 
+unreadFilter = -> !it.read
+
 app.filter 'unread', [
 	->
-		(list) ->
-			list?filter -> !it.read
+		(list) -> list?filter unreadFilter
 ]
