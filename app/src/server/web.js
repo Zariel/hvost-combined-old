@@ -177,21 +177,24 @@ var server = function(db) {
 				})
 
 				redis.setFeedLatest(id, last)
-				res.json(200, feeds)
+				return res.json(200, feeds)
 			}
 
 			if(from !== undefined && count !== undefined) {
 				from = parseInt(from)
 				count = parseInt(count)
 
-				exWrap(res, db.getFeedLimit(id, from, count).then(feedHandler))
+				return db.getFeedLimit(id, from, count).then(feedHandler)
 			} else {
-				exWrap(res, db.getFeed(id).then(feedHandler))
+				return db.getFeed(id).then(feedHandler)
 			}
-		})
+		}))
 	})
 
-	app.get('/api/feed/:id/read', function(req, res) {
+	/*
+	 * Mark a feed item as read
+	 */
+	app.put('/api/feed/:id/read', function(req, res) {
 		var id = req.params.id
 		if(!id) {
 			return res.send(400)
