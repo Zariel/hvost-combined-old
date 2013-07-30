@@ -7,10 +7,11 @@ var requestQ = function(url) {
 
 	request(url, function(err, res, body) {
 		if (err) {
-			return defer.reject
+			err.url = url
+			return defer.reject(err)
 		}
 
-		return defer.resolve(body, res)
+		return defer.resolve(body)
 	})
 
 	return defer.promise
@@ -29,11 +30,20 @@ var parseRSS = function(string) {
 	return defer.promise
 }
 
-var add = function(db, url) {
+var add = function(db, url, group, title) {
 	return requestQ(url).then(parseRSS).then(function(data) {
 		var rss = data.rss.channel[0]
-		var vals = [rss.title[0], rss.description[0], ((rss != null ? (ref$ = rss.ttl) != null ? ref$[0] : void 8 : void 8) || 30) * 60, url, rss.link[0]]
-		var query = 'INSERT INTO Channels(title, description, ttl, url, link, last_update) VALUES(?, ?, ?, ?, ?, NOW() - 1)'
+		var query = 'INSERT INTO Channels SET last_update = NOW() - 1, ?'
+
+		var vals = {
+			title: title || rss.title[0],
+			group_id: group || 0,
+			description: rss.description[0],
+			ttl: (rss.ttl != null ? rss.ttl[0] : 5) * 60,
+			url: url,
+			link: rss.link[0]
+		}
+		console.log(vals)
 
 		return db.query(query, vals)
 	})
