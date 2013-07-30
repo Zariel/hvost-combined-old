@@ -15,5 +15,8 @@
     "mysql": "~2.0.0-alpha8",
     "xml2js": "~0.2.8",
     "redis": "~0.8.4"
+  },
+  "devDependencies": {
+    "should": "~1.2.2"
   }
 }
