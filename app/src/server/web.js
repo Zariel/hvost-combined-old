@@ -99,14 +99,22 @@ var server = function(db) {
 
 	app.get('/api/channels', function(req, res) {
 		exWrap(res, db.getChannels().then(function(result) {
-			var chans = result.map(function(chan) {
+			var chans = {}
+
+			result.forEach(function(chan) {
 				chan.id = chan.channel_id
 				delete chan.channel_id
 
-				return chan
+				chans[chan.group_id] = chans[chan.group_id] || {
+					group_id: chan.group_id,
+					group_name: chan.group_name,
+					channels: []
+				}
+
+				chans[chan.group_id].channels.push(chan)
 			})
 
-			return res.json(200, chans)
+			res.json(200, chans)
 		}))
 	})
 
