@@ -32,7 +32,7 @@ app.factory 'indexdb', [
 					apply ->
 						defer.reject event
 
-				return defer.promise
+				defer.promise
 
 			get: (db, storeName, key) ->
 				defer = $q.defer!
