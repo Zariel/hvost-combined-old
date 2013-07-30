@@ -44,7 +44,7 @@ app.directive 'feedlist', [
 				key = event.keyCode
 				if key in [74, 32]	# this compiles nicely
 					$scope.$apply next
-				else if key is 75
+				else if key is 75 or (key is 32 and event.shiftKey)
 					$scope.$apply prev
 
 			$scope.markRead = (feed) ->
