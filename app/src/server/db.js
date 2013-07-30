@@ -102,6 +102,10 @@ var DB = (function() {
 		return defer.promise
 	}
 
+	DB.prototype.getGroupFeed = function(id) {
+		return this.query("SELECT * FROM Items WHERE group_id = ?", [id])
+	}
+
 	DB.prototype.getUser = function(name) {
 		return this.query("SELECT * FROM Users WHERE username = ?", [name])
 	}

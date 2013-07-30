@@ -211,8 +211,16 @@ var server = function(db) {
 		})))
 	})
 
-	app.get('/api/feed/unread/:id', function(req, res) {
+	app.get('/api/group/:id', function(req, res) {
 		var id = req.params.id
+
+		if(!id) {
+			return res.send(400)
+		}
+
+		exWrap(res, db.getGroupFeed(id).then(function(items) {
+			res.json(200, items.map(cleanItem))
+		}))
 	})
 
 	app.use(function(req, res, next) {
