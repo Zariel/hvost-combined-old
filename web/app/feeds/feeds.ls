@@ -27,7 +27,7 @@ app.factory 'Feed', [
 			id: '@id'
 		}, {
 			read:
-				method: 'GET'
+				method: 'PUT'
 				params:
 					action: 'read'
 		}
