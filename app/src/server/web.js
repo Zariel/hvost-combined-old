@@ -87,7 +87,7 @@ var server = function(db) {
 		}))
 	})
 
-	app.post('/api/feed/add', function(req, res) {
+	app.post('/api/channels/add', function(req, res) {
 		var url = req.body['url']
 		if (!url) {
 			return res.send(400, 'Error')
