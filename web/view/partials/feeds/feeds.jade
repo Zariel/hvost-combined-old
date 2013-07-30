@@ -3,9 +3,9 @@
 		feedList
 			feedItem(ng-repeat = 'feed in feeds')
 				h2
-					a(ng-href = "{{feed.link}}") {{ feed.title }}
-				div(ng-bind-html-unsafe = "feed.description")
-				div
-					span {{ feed.published | date }}
-					span read
+					a(ng-href = "{{feed.link}}", ng-bind-html-unsafe = "feed.title")
+				.feed-body(ng-bind-html-unsafe = "feed.description")
+				.feed-footer
+					span {{ feed.published | date:'medium' }}
+					span(style = "padding: 2px;") read
 					input(type = "checkbox", ng-model = "feed.read")
