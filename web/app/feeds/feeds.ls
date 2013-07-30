@@ -112,7 +112,7 @@ app.directive 'feeditem', [
 			replace: true
 			template: """
 				<section class = "feed-outer" id = {{id}}>
-					<section class = "feed-item well {{clazz}}">
+					<section ng-class = "clazz" class = "feed-item well">
 						<div ng-transclude>
 						</div>
 					</section>
