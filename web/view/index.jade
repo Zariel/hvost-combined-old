@@ -9,7 +9,7 @@ html(lang = 'en', ng-app = 'recess')
 
 		link(rel = "stylesheet", href = "/css/app.css")
 
-		title("hej")
+		title(ng-bind = "pageTitle")
 
 	body
 		ng-include(src = "'/partials/nav.html'")

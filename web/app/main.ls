@@ -36,3 +36,13 @@ app.config [
 
 		$locationProvider.html5Mode true .hashPrefix '!'
 ]
+
+app.factory 'PageTitle', [
+	'$rootScope'
+
+	($rootScope) ->
+		{
+			setTitle: (title) ->
+				$rootScope.pageTitle = title
+		}
+]
