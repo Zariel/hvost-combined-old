@@ -21,15 +21,3 @@ app.controller 'ControlsController', [
 			..success (data, status, headers) ->
 				$scope.channels = data
 ]
-
-app.directive 'LoadSpinner', {
-	restrict: 'A'
-	scope: {}
-	controller: [
-		'$scope'
-		'$http'
-
-		!($scope, $http) ->
-	]
-	link: !(scope, element, attrs) ->
-}
