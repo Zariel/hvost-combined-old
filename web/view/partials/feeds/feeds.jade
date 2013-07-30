@@ -1,7 +1,7 @@
 .fluid-container#feed-container
 	.row-fluid(infinite-scroll = 'nextPage()', infinite-scroll-disabled = 'busy', infinite-scroll-distance = '1')
 		feedList
-			feedItem(ng-repeat = 'feed in feeds | unread')
+			feedItem(ng-repeat = 'feed in feeds')
 				h2
 					a(ng-href = "{{feed.link}}") {{ feed.title }}
 				div(ng-bind-html-unsafe = "feed.description")
