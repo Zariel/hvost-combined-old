@@ -14,7 +14,6 @@ var exWrap = function(res, promise) {
 
 var server = function(db) {
 	var app = express()
-	var servDir = path.join(__dirname, '../../../web/build')
 
 	app.use(function(req, res, next) {
 		console.log("%s - %s", req.method, req.url)
