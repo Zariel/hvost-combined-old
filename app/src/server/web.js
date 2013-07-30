@@ -143,7 +143,7 @@ var server = function(db) {
 		 * TODO: Replace this with an etag system so feeds will be updated when the
 		 * items are read.
 		*/
-		redis.getFeedLatest(id).then(function(cached) {
+		exWrap(res, redis.getFeedLatest(id).then(function(cached) {
 			if(cached) {
 				if(modSince >= cached) {
 					return res.send(304)
