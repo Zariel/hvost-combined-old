@@ -11,6 +11,14 @@ var exWrap = function(res, promise) {
 		return res.send(500)
 	})
 }
+var cleanItem = function(item) {
+	item.id = item.item_id
+
+	delete item.hash
+	delete item.item_id
+
+	return item
+}
 
 var server = function(db) {
 	var app = express()
