@@ -126,12 +126,21 @@ var server = function(db) {
 		}))
 	})
 
-  // TODO: Replace this with DELETE
- //  app.post('/api/feed/:id', function(req, res) {
-	// var id = req.params['id']
+	app.get('/api/feed', function(req, res) {
+		var from = req.query.from
+		var count = req.query.count
 
-	// res.send(id)
- //  })
+		if(from !== undefined && count !== undefined) {
+			from = parseInt(from)
+			count = parseInt(count)
+
+			exWrap(res, db.getAllFeeds(from, count).then(function(items) {
+				res.json(200, items.map(cleanItem))
+			}))
+		} else {
+			res.send(400)
+		}
+	})
 
 	/*
 	 * Get all items in a feed, currently unread.

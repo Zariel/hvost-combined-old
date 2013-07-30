@@ -106,6 +106,10 @@ var DB = (function() {
 		return this.query("SELECT * FROM Items WHERE group_id = ?", [id])
 	}
 
+	DB.prototype.getAllFeeds = function(from, count) {
+		return this.query("SELECT * FROM Items WHERE `read` = 0 ORDER BY published LIMIT ?, ?", [from, count])
+	}
+
 	DB.prototype.getUser = function(name) {
 		return this.query("SELECT * FROM Users WHERE username = ?", [name])
 	}
