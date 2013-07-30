@@ -7,7 +7,7 @@ var P = require("path")
 
 var exWrap = function(res, promise) {
 	promise.catch(function(err) {
-		console.log(err)
+		console.log(err.stack)
 		return res.send(500)
 	})
 }
