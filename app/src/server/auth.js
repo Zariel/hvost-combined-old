@@ -28,17 +28,45 @@ var createApiKey = function(user, passw) {
 	return hash.digest("hex").slice(0, 32).toString("hex")
 }
 
+var updateTTL = function() {
+	redis.expire(API_KEY, EXPIRE_TIME).catch(function(err) {
+		console.log(err.stack)
+	})
+}
+
+var storeKey = function(key) {
+	return redis.set(API_KEY, key).then(function() {
+		updateTTL()
+		return key
+	})
+}
+
 var isValid = function(key) {
 	return redis.get(API_KEY).then(function(res) {
 		if(!res || res !== key) {
 			return false
 		}
 
-		redis.expire(API_KEY, EXPIRE_TIME).catch(function(err) {
-			console.log(err.stack)
-		})
+		updateTTL()
 
 		return true
+	})
+}
+
+var getApiKey = function(name, passw) {
+	// either get the key from redis or create a new one
+	// reuse API keys so that the same user can be logged in
+	// from the multiple devices at the same time.
+	return redis.get(API_KEY).then(function(key) {
+		if(key) {
+			updateTTL()
+
+			return key
+		} else {
+			key = createApiKey(name, passw)
+
+			return storeKey(key)
+		}
 	})
 }
 
@@ -50,16 +78,10 @@ var login = function(name, passw) {
 
 		var details = res[0]
 		if(authLib.isPasswordValid(passw, details.password)) {
-			var key = createApiKey(name, details.password)
-			// could maybe return this early but would lead to race conditions
-			return redis.set(API_KEY, key).then(function() {
-				return redis.expire(API_KEY, EXPIRE_TIME).then(function() {
-					return key
-				})
-			})
-		} else {
-			throw new Error("Password is invalid")
+			return getApiKey(name, details.password)
 		}
+
+		throw new Error("Password is invalid")
 	})
 }
 
